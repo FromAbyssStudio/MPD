@@ -1,0 +1,39 @@
+name: MPD
+version: "1.0.0"
+slug: mpd
+panel_icon: mdi:music-circle
+description: >
+  Music Player Daemon from the official MPD project. Plays audio files,
+  organizes playlists, and maintains a music database. Use with Home Assistant's
+  MPD integration for media_player control.
+url: https://www.musicpd.org/
+image: ghcr.io/toymak3r/mpd-{arch}
+arch:
+  - armv7
+  - armhf
+  - aarch64
+  - amd64
+  - i386
+init: true
+audio: true
+devices:
+  - /dev/snd
+map:
+  - type: share
+    read_only: false
+  - type: media
+    read_only: false
+ports:
+  6600/tcp: 6600
+ports_description:
+  6600/tcp: MPD protocol (for HA integration and clients)
+options:
+  media_folder: /media
+  playlist_folder: /media/playlists
+  port: 6600
+  zeroconf_enabled: true
+schema:
+  media_folder: str
+  playlist_folder: str
+  port: port
+  zeroconf_enabled: bool

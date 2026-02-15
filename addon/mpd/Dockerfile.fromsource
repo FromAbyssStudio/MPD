@@ -1,0 +1,44 @@
+# Build MPD from this repo. Build context MUST be the repo root:
+#   docker build -f addon/mpd/Dockerfile.fromsource -t mpd .
+#
+# For Home Assistant multi-arch, use the build script or CI (see addon/mpd/README.md).
+
+ARG BUILD_FROM=alpine:3.19
+FROM $BUILD_FROM AS builder
+
+RUN apk add --no-cache \
+    build-base \
+    meson \
+    ninja \
+    git \
+    pkgconfig \
+    alsa-lib-dev
+
+# Copy full repo (context must be repo root)
+COPY . /mpd-src
+WORKDIR /mpd-src
+
+# Build with options suitable for HA add-on: ALSA output, no daemon (we run in foreground)
+RUN meson setup build \
+    -Dprefix=/usr \
+    -Dalsa=enabled \
+    -Dzeroconf=disabled \
+    -Ddaemon=false \
+    -Ddatabase=true \
+    -Dtest=false \
+    -Ddocumentation=disabled \
+    && ninja -C build \
+    && ninja -C build install
+
+# Runtime image (context is repo root, so run.sh is under addon/mpd/)
+ARG BUILD_FROM=alpine:3.19
+FROM $BUILD_FROM
+
+RUN apk add --no-cache alsa-lib
+
+COPY --from=builder /usr/bin/mpd /usr/bin/mpd
+
+COPY addon/mpd/run.sh /run.sh
+RUN chmod +x /run.sh
+
+CMD [ "/run.sh" ]
